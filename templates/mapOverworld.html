@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mappa Interattiva</title>
+
+    <!-- Importa Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #map {
+        width: 100%;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <!-- Contenitore della mappa -->
+
+    <script>
+      // Crea la mappa centrata su una posizione (es. Roma, Italia)
+      var map = L.map("map").setView([43.73074, 7.42552], 17);
+
+      // Aggiunge il layer della mappa (OpenStreetMap)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(map);
+
+      // Dati dei punti (latitudine, longitudine, titolo, azione)
+      var locations = [
+        {
+          lat: 43.73074,
+          lng: 7.42552,
+          title: "Museo",
+          action: () => alert("Benvenuto al Museo!"),
+        },
+        {
+          lat: 41.9071,
+          lng: 12.4544,
+          title: "Città del Vaticano",
+          action: () => (window.location.href = "https://www.vatican.va"),
+        },
+      ];
+
+      // Aggiunge i marcatori alla mappa
+      locations.forEach((loc) => {
+        var marker = L.marker([loc.lat, loc.lng])
+          .addTo(map)
+          .bindPopup(loc.title) // Mostra il titolo quando si clicca
+          .on("click", loc.action); // Esegue l'azione quando si clicca
+      });
+    </script>
+  </body>
+</html>

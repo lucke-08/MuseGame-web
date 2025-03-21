@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pannello Admin</title>
+    <meta name="theme-color" content="#0069d9" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f8f9fa;
+        margin: 0;
+        padding: 0;
+      }
+
+      h1 {
+        margin-top: 20px;
+        font-size: 24px;
+        color: whitesmoke;
+      }
+
+      table {
+        width: 100%;
+        max-width: 1200px;
+        margin: 20px auto;
+        border-collapse: collapse;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        font-size: 16px;
+      }
+
+      th {
+        background-color: #0056b3;
+        color: white;
+        font-size: 18px;
+      }
+
+      /* Larghezza dinamica delle colonne */
+      th:nth-child(2) {
+        width: 25%;
+      } /* Domanda */
+      th:nth-child(3) {
+        width: 40%;
+      } /* Opzioni */
+      th:nth-child(4) {
+        width: 8%;
+      } /* Risposta Corretta */
+      th:nth-child(5) {
+        width: 15%;
+      } /* POI */
+      th:nth-child(6) {
+        width: 12%;
+      } /* Azioni */
+
+      /* Campi input */
+      td input,
+      td textarea {
+        width: 90%;
+        padding: 8px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      /* Multilinea per il titolo della domanda */
+      td textarea[id^="title-"] {
+        height: 60px;
+        resize: vertical;
+      }
+
+      /* Opzioni con bottone "X" a destra */
+      .options-container {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .option-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 5px;
+      }
+
+      .option-wrapper input {
+        flex-grow: 1;
+      }
+
+      /* Pulsanti */
+      button {
+        padding: 8px 12px;
+        margin: 4px;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      .edit-btn {
+        background: #f0ad4e;
+        color: white;
+      }
+
+      .delete-btn {
+        background: #d9534f;
+        color: white;
+      }
+
+      button:hover {
+        opacity: 0.8;
+      }
+
+      #settings-section {
+        width: 100%;
+        max-width: 1200px;
+        margin: 20px auto;
+        border-collapse: collapse;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #settings-section input {
+        margin: 5px 5px;
+        padding: 5px;
+        width: calc(100% - 20px);
+      }
+
+      #settings-section button {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      #settings-section button:hover {
+        opacity: 0.8;
+      }
+
+      /* Stili responsive */
+      @media (max-width: 768px) {
+        th,
+        td {
+          font-size: 14px;
+          padding: 8px;
+        }
+
+        td input,
+        td textarea {
+          font-size: 12px;
+          padding: 5px;
+        }
+
+        button {
+          font-size: 12px;
+          padding: 6px 10px;
+        }
+
+        .option-wrapper {
+          flex-direction: row;
+        }
+      }
+
+      @media (max-width: 480px) {
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+
+        th,
+        td {
+          font-size: 12px;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top-bar">
+      <div>
+        <button class="nav-button" onclick="window.location.href='/map'">
+          Mappa
+        </button>
+        <button class="nav-button" onclick="window.location.href='/scoreboard'">
+          Scoreboard
+        </button>
+      </div>
+      <p id="nav-userinfo"></p>
+      <button class="nav-button" onclick="window.location.href='/'">
+        Home
+      </button>
+    </div>
+
+    <h1>Impostazioni</h1>
+    <div id="settings-section">
+      <label for="winPoints">Punti per vittoria:</label>
+      <input type="number" id="winPoints" placeholder="Punti per vittoria" />
+
+      <label for="losePoints">Punti per sconfitta:</label>
+      <input type="number" id="losePoints" placeholder="Punti per sconfitta" />
+
+      <label for="mapImage">Indirizzo immagine mappa:</label>
+      <input type="text" id="mapImage" placeholder="URL immagine mappa" />
+
+      <button onclick="saveSettings()">Salva Impostazioni</button>
+    </div>
+
+    <h1>Gestione Utenti</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Password</th>
+          <th>Ruolo</th>
+          <th>Punti</th>
+          <th>Quiz Completati</th>
+          <th>Quiz Trovati</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="userTable">
+        <!-- Qui verranno caricati gli utenti -->
+      </tbody>
+    </table>
+
+    <h1>Gestione Quiz</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Domanda</th>
+          <th>Opzioni</th>
+          <th>Risposta Corretta</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="quizTable">
+        <!-- Qui verranno caricati i quiz -->
+      </tbody>
+    </table>
+
+    <button onclick="addNewQuiz()">Aggiungi Nuovo Quiz</button>
+
+    <h1>Gestione Set Quiz</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>quiz IDs</th>
+          <th>POI</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="setTable">
+        <!-- Qui verranno caricati i set -->
+      </tbody>
+    </table>
+
+    <button onclick="addNewSet()">Aggiungi Nuovo Set</button>
+
+    <script>
+      const API_URL = "/admin/api";
+
+      // Funzione per caricare la lista utenti
+      function loadUsers() {
+        fetch(`${API_URL}/users`)
+          .then((response) => response.json())
+          .then((data) => {
+            const tableBody = document.getElementById("userTable");
+            tableBody.innerHTML = ""; // Pulisce la tabella
+
+            data.forEach((user) => {
+              const row = document.createElement("tr");
+
+              row.innerHTML = `
+                    <td>${user.id}</td>
+                    <td><input type="text" value="${user.username}" id="username-${user.username}"></td>
+                    <td><input type="text" value="${user.password}" id="password-${user.username}"></td>
+                    <td><input type="text" value="${user.role}" id="role-${user.username}"></td>
+                    <td><input type="number" value="${user.musegamepoint}" id="points-${user.username}"></td>
+                    <td><input type="text" value="${user.musegamedone}" id="games-${user.username}"></td>
+                    <td><input type="text" value="${user.musegamefound}" id="found-${user.username}"></td>
+                    <td>
+                        <button class="edit-btn" onclick="editUser('${user.username}')">Modifica</button>
+                        <button class="delete-btn" onclick="deleteUser('${user.username}')">Elimina</button>
+                    </td>
+                `;
+
+              tableBody.appendChild(row);
+            });
+          })
+          .catch((error) =>
+            console.error("Errore nel caricamento utenti:", error)
+          );
+      }
+
+      // Funzione per modificare un utente
+      function editUser(username) {
+        const newUsername = document.getElementById(
+          `username-${username}`
+        ).value;
+        const newPassword = document.getElementById(
+          `password-${username}`
+        ).value;
+        const newRole = document.getElementById(`role-${username}`).value;
+        const newPoints = document.getElementById(`points-${username}`).value;
+
+        // Ottieni il valore dei giochi completati
+        const newGamesRaw = document
+          .getElementById(`games-${username}`)
+          .value.trim();
+        const newFoundRaw = document
+          .getElementById(`found-${username}`)
+          .value.trim();
+
+        // Controllo: verifica se newGames è nel formato di una lista numerica
+        const isValidGamesFormat = /^\[\s*(\d+\s*(,\s*\d+\s*)*)?\]$/.test(
+          newGamesRaw
+        );
+        const isValidFoundFormat = /^\[\s*(\d+\s*(,\s*\d+\s*)*)?\]$/.test(
+          newFoundRaw
+        );
+
+        if (!isValidGamesFormat) {
+          alert(
+            "Errore: Il campo 'Quiz Completati' deve essere una lista numerica nel formato [1,2,3]"
+          );
+          return;
+        }
+        if (!isValidFoundFormat) {
+          alert(
+            "Errore: Il campo 'Quiz Trovati' deve essere una lista numerica nel formato [1,2,3]"
+          );
+          return;
+        }
+
+        const userData = {
+          target: username,
+          "new-username": newUsername,
+          "new-password": newPassword,
+          "new-role": newRole,
+          "new-musegamepoint": newPoints,
+          "new-musegamedone": newGamesRaw, // Mantiene il valore come stringa, senza conversione
+          "new-musegamefound": newFoundRaw, // Mantiene il valore come stringa, senza conversione
+        };
+
+        fetch(`${API_URL}/edit-user`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(userData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            loadUsers(); // Ricarica la lista utenti
+          })
+          .catch((error) => console.error("Errore nella modifica:", error));
+      }
+
+      // Funzione per eliminare un utente
+      function deleteUser(username) {
+        if (confirm(`Sei sicuro di voler eliminare l'utente ${username}?`)) {
+          fetch(`${API_URL}/delete-user?target=${username}`, { method: "GET" })
+            .then((response) => response.json())
+            .then((data) => {
+              alert(data.message);
+              loadUsers(); // Ricarica la lista utenti
+            })
+            .catch((error) =>
+              console.error("Errore nell'eliminazione:", error)
+            );
+        }
+      }
+      function loadQuizzes() {
+        fetch(`${API_URL}/quizzes`)
+          .then((response) => response.json())
+          .then((data) => {
+            const tableBody = document.getElementById("quizTable");
+            tableBody.innerHTML = ""; // Pulisce la tabella
+
+            data.forEach((quiz) => {
+              /*               const poi = quiz.poi || {}; // Assicura che POI esista */
+              const options = quiz.options || {}; // Assicura che esistano opzioni
+              const optionKeys = Object.keys(options); // Ottiene le chiavi delle opzioni
+
+              const optionsHTML = optionKeys
+                .map(
+                  (key, index) => `
+    <div class="option-wrapper" id="option-${quiz.id}-${index}">
+      <input type="text" value="${options[key]}" id="option-${
+                    quiz.id
+                  }-${index}-text" placeholder="Opzione ${index + 1}">
+      <button onclick="removeOption(${quiz.id}, ${index})" ${
+                    optionKeys.length <= 2 ? "disabled" : ""
+                  }>❌</button>
+    </div>`
+                )
+                .join("");
+
+              const row = document.createElement("tr");
+
+              row.innerHTML = `
+          <td>${quiz.id}</td>
+          <td><input type="text" value="${quiz.title}" id="title-${
+                quiz.id
+              }"></td>
+          <td>
+            <div id="options-container-${quiz.id}">
+              ${optionsHTML}
+            </div>
+            <button onclick="addOption(${quiz.id})" ${
+                optionKeys.length >= 6 ? "disabled" : ""
+              }>➕ Aggiungi Opzione</button>
+          </td>
+          <td><input type="number" value="${
+            quiz.correct_option_id
+          }" id="correct-${quiz.id}"></td>
+          <td>
+            <button class="edit-btn" onclick="editQuiz(${
+              quiz.id
+            })">Modifica</button>
+            <button class="delete-btn" onclick="deleteQuiz(${
+              quiz.id
+            })">Elimina</button>
+            </td>
+            `;
+              /*             <td>
+              <input type="text" value="${poi.color || ""}" id="poi-color-${
+                  quiz.id
+                }" placeholder="Colore">
+              <input type="text" value="${poi.title || ""}" id="poi-title-${
+                  quiz.id
+                }" placeholder="Titolo">
+              <input type="number" value="${poi.x || 0}" id="poi-x-${
+                  quiz.id
+                }" placeholder="X">
+              <input type="number" value="${poi.y || 0}" id="poi-y-${
+                  quiz.id
+                }" placeholder="Y">
+            </td> */
+
+              tableBody.appendChild(row);
+            });
+          })
+          .catch((error) =>
+            console.error("Errore nel caricamento quiz:", error)
+          );
+      }
+      function addOption(quizId) {
+        const optionsContainer = document.getElementById(
+          `options-container-${quizId}`
+        );
+        const optionsCount = optionsContainer.children.length; // Conta le opzioni attuali
+
+        if (optionsCount < 6) {
+          const newOptionDiv = document.createElement("div");
+          newOptionDiv.id = `option-${quizId}-${optionsCount}`;
+          newOptionDiv.innerHTML = `
+      <input type="text" id="option-${quizId}-${optionsCount}-text" placeholder="Opzione ${
+            optionsCount + 1
+          }">
+      <button onclick="removeOption(${quizId}, ${optionsCount})">❌</button>
+    `;
+          optionsContainer.appendChild(newOptionDiv);
+        }
+      }
+
+      function removeOption(quizId, index) {
+        const optionElement = document.getElementById(
+          `option-${quizId}-${index}`
+        );
+        if (optionElement) {
+          optionElement.remove();
+        }
+      }
+
+      function editQuiz(quizId) {
+        const newTitle = document.getElementById(`title-${quizId}`).value;
+        const newCorrect = document.getElementById(`correct-${quizId}`).value;
+
+        // Recupera le opzioni dinamicamente
+        const optionsContainer = document.getElementById(
+          `options-container-${quizId}`
+        );
+        const optionInputs = optionsContainer.querySelectorAll("input");
+        let newOptions = {};
+
+        optionInputs.forEach((input, index) => {
+          newOptions[`option_${index + 1}`] = input.value;
+        });
+
+        /*         // Recupera i valori dai nuovi input POI
+        const newPoi = {
+          color: document.getElementById(`poi-color-${quizId}`).value,
+          title: document.getElementById(`poi-title-${quizId}`).value,
+          x: parseInt(document.getElementById(`poi-x-${quizId}`).value, 10),
+          y: parseInt(document.getElementById(`poi-y-${quizId}`).value, 10),
+          quizid: quizId, // Il quizid rimane invariato
+        }; */
+
+        const quizData = {
+          id: quizId,
+          title: newTitle,
+          options: newOptions,
+          correct_option_id: newCorrect,
+          /* poi: newPoi, */
+        };
+
+        fetch(`${API_URL}/edit-quiz`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(quizData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            loadQuizzes(); // Ricarica la lista quiz
+          })
+          .catch((error) => console.error("Errore nella modifica:", error));
+      }
+
+      async function addNewQuiz() {
+        var payload = await (await fetch(`${API_URL}/quizzes`)).json();
+        const newQuiz = {
+          title: "Nuova domanda",
+          options: { option_1: "Opzione 1", option_2: "Opzione 2" },
+          correct_option_id: 1,
+          /*           poi: {
+            color: "blue",
+            quizid: payload.slice(-1)[0]["id"] + 1,
+            title: "Nuovo POI",
+            x: 0,
+            y: 0,
+          }, */
+        };
+
+        fetch(`${API_URL}/add-quiz`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newQuiz),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            loadQuizzes();
+          })
+          .catch((error) => console.error("Errore nell'aggiunta:", error));
+      }
+
+      function deleteQuiz(quizId) {
+        if (
+          confirm(`Sei sicuro di voler eliminare il quiz con ID ${quizId}?`)
+        ) {
+          fetch(`${API_URL}/delete-quiz?id=${quizId}`, { method: "GET" })
+            .then((response) => response.json())
+            .then((data) => {
+              alert(data.message);
+              loadQuizzes(); // Ricarica la lista quiz
+            })
+            .catch((error) =>
+              console.error("Errore nell'eliminazione:", error)
+            );
+        }
+      }
+
+      // Funzione per caricare le impostazioni
+      function loadSettings() {
+        fetch(`${API_URL}/settings`)
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("winPoints").value = data.winPoints || "";
+            document.getElementById("losePoints").value = data.losePoints || "";
+            document.getElementById("mapImage").value = data.mapImage || "";
+          })
+          .catch((error) =>
+            console.error("Errore nel caricamento delle impostazioni:", error)
+          );
+      }
+
+      // Funzione per salvare le impostazioni
+      function saveSettings() {
+        const winPoints = document.getElementById("winPoints").value;
+        const losePoints = document.getElementById("losePoints").value;
+        const mapImage = document.getElementById("mapImage").value;
+
+        // Converto i punti in interi
+        const winPointsInt = parseInt(winPoints);
+        const losePointsInt = parseInt(losePoints);
+
+        // Verifico se i punti sono numeri validi
+        if (isNaN(winPointsInt) || isNaN(losePointsInt)) {
+          alert("Errore: I punti devono essere numeri validi.");
+          return;
+        }
+
+        // Crea l'oggetto dei dati per le impostazioni
+        const settingsData = {
+          winPoints: winPointsInt,
+          losePoints: losePointsInt,
+          mapImage: mapImage,
+        };
+
+        // Invia i dati al server per il salvataggio
+        fetch(`${API_URL}/save-settings`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(settingsData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+          })
+          .catch((error) =>
+            console.error("Errore nel salvataggio delle impostazioni:", error)
+          );
+      }
+
+      function loadSet() {
+        fetch(`${API_URL}/sets`)
+          .then((response) => response.json())
+          .then((data) => {
+            const tableBody = document.getElementById("setTable");
+            tableBody.innerHTML = ""; // Pulisce la tabella
+
+            data.forEach((set) => {
+              const poi = set.poi || {}; // Assicura che POI esista
+              const row = document.createElement("tr");
+
+              row.innerHTML = `
+          <td>${set.id}</td>
+          <td><input type="text" value="${set.setids}" id="ids-${set.id}"></td>
+              <td>
+                <input type="text" value="${poi.color || ""}" id="poi-color-${
+                set.id
+              }" placeholder="Colore">
+                <input type="text" value="${poi.title || ""}" id="poi-title-${
+                set.id
+              }" placeholder="Titolo">
+                <input type="number" value="${poi.x || 0}" id="poi-x-${
+                set.id
+              }" placeholder="X">
+                <input type="number" value="${poi.y || 0}" id="poi-y-${
+                set.id
+              }" placeholder="Y">
+                </td>
+                <td>
+            <button class="edit-btn" onclick="editSet(${
+              set.id
+            })">Modifica</button>
+            <button class="delete-btn" onclick="deleteSet(${
+              set.id
+            })">Elimina</button>
+            </td>
+            `;
+
+              tableBody.appendChild(row);
+            });
+          })
+          .catch((error) =>
+            console.error("Errore nel caricamento set:", error)
+          );
+      }
+
+      function editSet(setId) {
+        const newIDs = document.getElementById(`ids-${setId}`).value;
+
+        // Recupera i valori dai nuovi input POI
+        const newPoi = {
+          color: document.getElementById(`poi-color-${setId}`).value,
+          title: document.getElementById(`poi-title-${setId}`).value,
+          x: parseInt(document.getElementById(`poi-x-${setId}`).value, 10),
+          y: parseInt(document.getElementById(`poi-y-${setId}`).value, 10),
+          quizid: setId, // Il quizid rimane invariato
+        };
+
+        const quizData = {
+          id: setId,
+          setids: newIDs,
+          poi: newPoi,
+        };
+
+        fetch(`${API_URL}/edit-set`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(quizData),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            loadSet(); // Ricarica la lista set
+          })
+          .catch((error) => console.error("Errore nella modifica:", error));
+      }
+
+      async function addNewSet() {
+        var payload = await (await fetch(`${API_URL}/sets`)).json();
+        const newQuiz = {
+          setids: "[]",
+          poi: {
+            color: "blue",
+            quizid: payload.slice(-1)[0]["id"] + 1,
+            title: "Nuovo POI",
+            x: 0,
+            y: 0,
+          },
+        };
+
+        fetch(`${API_URL}/add-set`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newQuiz),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            alert(data.message);
+            loadSet();
+          })
+          .catch((error) => console.error("Errore nell'aggiunta:", error));
+      }
+
+      function deleteSet(setId) {
+        if (confirm(`Sei sicuro di voler eliminare il set con ID ${setId}?`)) {
+          fetch(`${API_URL}/delete-set?id=${setId}`, { method: "GET" })
+            .then((response) => response.json())
+            .then((data) => {
+              alert(data.message);
+              loadSet(); // Ricarica la lista quiz
+            })
+            .catch((error) =>
+              console.error("Errore nell'eliminazione:", error)
+            );
+        }
+      }
+
+      // Carica le impostazioni all'avvio della pagina
+      window.onload = () => {
+        loadUsers();
+        loadQuizzes();
+        loadSet();
+        loadSettings(); // Carica le impostazioni
+      };
+    </script>
+  </body>
+</html>

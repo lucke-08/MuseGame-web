@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login</title>
+  </head>
+  <body>
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" /><br />
+    <input type="password" id="password" placeholder="Password" /><br />
+    <button onclick="login()">Accedi</button>
+    <p>Non hai un account? <a href="/register">Registrati</a></p>
+    <script>
+      async function login() {
+        let username = document.getElementById("username").value;
+        let password = document.getElementById("password").value;
+
+        let response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+
+        let data = await response.json();
+        if (response.ok) {
+          window.location.href = "/"; // Reindirizza alla pagina protetta
+        } else if (data.errcode === 4001) {
+          localStorage.setItem("username", username);
+          localStorage.setItem("password", password);
+          window.location.href = "/register";
+        } else {
+          alert(data.message);
+        }
+      }
+      document.getElementById("username").value =
+        localStorage.getItem("username") || "";
+      document.getElementById("password").value =
+        localStorage.getItem("password") || "";
+      localStorage.clear();
+    </script>
+  </body>
+</html>

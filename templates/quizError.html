@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0069d9" />
+    <title>Quiz sconosciuto</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="top-bar">
+      <div>
+        <button class="nav-button" onclick="window.location.href='/map'">
+          Mappa
+        </button>
+        <button class="nav-button" onclick="window.location.href='/scoreboard'">
+          Scoreboard
+        </button>
+      </div>
+      <p id="nav-userinfo">{{ user['score'] ~ ' punti' if user else '' }}</p>
+      <button class="nav-button" onclick="window.location.href='/'">
+        Home
+      </button>
+    </div>
+
+    <div class="quiz-container">
+      <h1 id="quiz-title">Non hai ancora trovato<br>il QR code di questo luogo</h1>
+      <button class="nav-button" onclick="window.location.href='/map'">
+        Torna alla Mappa
+      </button>
+    </div>
+  </body>
+</html>

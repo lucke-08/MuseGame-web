@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Login</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='login/style.css') }}"
+    />
+  </head>
+  <body
+    class="img js-fullheight"
+    style="background: url(/static/background.jpg)"
+  >
+    <section class="ftco-section">
+      <div class="container">
+        <!-- 			<div class="row justify-content-center">
+				<div class="col-md-6 text-center mb-5">
+					<h2 class="heading-section">Login #10</h2>
+				</div>
+			</div> -->
+        <div class="row justify-content-center">
+          <div class="col-md-6 col-lg-4">
+            <div class="login-wrap p-0">
+              <h3 class="mb-4 text-center">Hai un account?</h3>
+              <form id="login-form" class="signin-form">
+                <div class="form-group">
+                  <input
+                    type="text"
+                    id="username"
+                    class="form-control"
+                    placeholder="Username"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <input
+                    id="password"
+                    type="password"
+                    class="form-control"
+                    placeholder="Password"
+                    required
+                  />
+                  <span
+                    toggle="#password"
+                    class="fa fa-fw fa-eye field-icon toggle-password"
+                  ></span>
+                </div>
+                <div class="form-group">
+                  <button
+                    type="submit"
+                    class="form-control btn btn-primary submit px-3"
+                  >
+                    Accedi
+                  </button>
+                </div>
+              </form>
+
+              <!-- SPAZIO PER MESSAGGI DI RISPOSTA -->
+              <p id="login-message" class="text-center"></p>
+              <!-- <p class="w-100 text-center">&mdash; Or Sign In With &mdash;</p>
+              <div class="social d-flex text-center">
+                <a href="#" class="px-2 py-2 mr-md-1 rounded"
+                  ><span class="ion-logo-facebook mr-2"></span> Google</a
+                >
+              </div> -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script>
+      document
+        .getElementById("login-form")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault(); // Evita il ricaricamento della pagina
+
+          // Prendi i valori da username e password
+          const username = document.getElementById("username").value.trim();
+          const password = document.getElementById("password").value.trim();
+
+          // L'username può iniziare e finire con . o _, ma deve contenere solo lettere, numeri, . e _
+          const usernameRegex = /^[a-zA-Z0-9._]{3,20}$/;
+
+          // La password deve avere almeno 5 caratteri e contenere almeno una lettera e un numero
+          const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d).{5,}$/;
+
+          if (!usernameRegex.test(username)) {
+            alert(
+              "⚠️ Username non valido! Deve essere lungo 3-20 caratteri e contenere solo lettere, numeri, _ e ."
+            );
+            return;
+          }
+
+          if (!passwordRegex.test(password)) {
+            alert(
+              "⚠️ Password non valida! Deve essere lunga almeno 5 caratteri e contenere almeno una lettera e un numero."
+            );
+            return;
+          }
+
+          // Converte i dati in formato JSON
+          const data = { username: username, password: password };
+
+          try {
+            const response = await fetch("/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json(); // Converti la risposta in JSON
+
+            // Mostra un messaggio all'utente
+
+            if (response.ok) {
+              window.location.href = "/map";
+            } else if (result.errcode == 4001) {
+              localStorage.setItem("username", username);
+              localStorage.setItem("password", password);
+              window.location.href = "/register";
+            } else {
+              document.getElementById("login-message").style.color = "red";
+              document.getElementById("login-message").innerText =
+                result.message;
+            }
+          } catch (error) {
+            console.error("Errore durante il login:", error);
+            document.getElementById("login-message").innerText =
+              "Errore di connessione";
+            document.getElementById("login-message").style.color = "red";
+          }
+        });
+      document.getElementById("username").value =
+        localStorage.getItem("username") || "";
+      document.getElementById("password").value =
+        localStorage.getItem("password") || "";
+      localStorage.clear();
+    </script>
+    <script src="{{ url_for('static', filename='login/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='login/popper.js') }}"></script>
+    <script src="{{ url_for('static', filename='login/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='login/main.js') }}"></script>
+  </body>
+</html>

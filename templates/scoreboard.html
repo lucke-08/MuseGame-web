@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0069d9" />
+    <title>Classifica MuseGame</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <!-- Header top-bar con i pulsanti Mappa e Home -->
+    <div class="top-bar-absolute">
+      <button class="nav-button" onclick="window.location.href='/map'">
+        Mappa
+      </button>
+      <p id="nav-userinfo">{{ user['score'] ~ ' punti' if user else '' }}</p>
+      <button class="nav-button" onclick="window.location.href='/'">
+        Home
+      </button>
+    </div>
+
+    <!-- Contenuto della pagina scoreboard -->
+    <div class="scoreboard-container">
+      <h1 class="scoreboard-title">Classifica MuseGame</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Posizione</th>
+            <th>Nome Utente</th>
+            <th>Punteggio</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard">
+          <!-- Dati caricati dinamicamente -->
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      async function fetchLeaderboard() {
+        try {
+          const response = await fetch("/api/scoreboard");
+          const data = await response.json();
+
+          const leaderboardTable = document.getElementById("leaderboard");
+          leaderboardTable.innerHTML = "";
+
+          // Supponiamo che "user" sia una variabile globale contenente l'utente attuale
+          data.forEach((player, index) => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td class="scoreboard-position">${index + 1}</td>
+                <td>${player.username}</td>
+                <td>${player.musegamepoint}</td>
+            `;
+
+            if ("{{ user['name'] if user }}" === player.username) {
+              row.classList.add("highlight-current-user"); // Aggiunge una classe speciale
+            }
+
+            leaderboardTable.appendChild(row);
+          });
+        } catch (error) {
+          console.error("Errore nel caricamento della classifica:", error);
+        }
+      }
+
+      fetchLeaderboard();
+    </script>
+  </body>
+</html>

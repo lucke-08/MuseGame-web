@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0069d9" />
+    <title>Mappa MuseGame</title>
+
+    <!-- Importa Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="max-vh-wrap">
+      <div class="top-bar">
+        <button class="nav-button" onclick="window.location.href='/scoreboard'">
+          Scoreboard
+        </button>
+        <p id="nav-userinfo">{{ user['score'] ~ ' punti' if user else '' }}</p>
+        <button class="nav-button" onclick="window.location.href='/'">
+          Home
+        </button>
+      </div>
+      <div id="map"></div>
+    </div>
+    <!-- Contenitore della mappa -->
+
+    <script>
+      // Imposta la dimensione dell'immagine della mappa (larghezza, altezza in pixel)
+      var imageWidth = 2296;
+      var imageHeight = 2669;
+
+      // Definisce i limiti della mappa
+      var bounds = [
+        [0, 0],
+        [imageHeight, imageWidth],
+      ];
+
+      // Crea la mappa con movimento limitato ai bordi
+      var map = L.map("map", {
+        crs: L.CRS.Simple,
+        minZoom: -2.5,
+        maxZoom: 0.5,
+        zoomSnap: 0.5,
+        maxBounds: bounds, // Limita il movimento all'area dell'immagine
+        maxBoundsViscosity: 1.0, // Impedisce di trascinare la mappa fuori
+      });
+
+      // Aggiunge l'immagine della mappa
+      L.imageOverlay("{{ settings['mapImage'] }}", bounds).addTo(map);
+
+      // Imposta la vista iniziale centrata sulla mappa
+      map.fitBounds(bounds);
+
+      function getMarkerSize() {
+        const zoomLevel = map.getZoom();
+        // Imposta una dimensione base, che varia con lo zoom
+        const size = 15 * Math.pow(1.2, zoomLevel); // Aumenta la dimensione del 20% per ogni livello di zoom
+        return size;
+      }
+
+      // Funzione per ottenere i dati dall'API e usarli
+      async function loadQuizData() {
+        try {
+          const response = await fetch("/api/quiz-poi?id=all");
+
+          if (!response.ok) {
+            throw new Error("Errore nel caricamento dei dati");
+          }
+
+          const locations = await response.json(); // Converte la risposta in JSON
+
+          // Aggiungi i marcatori sulla mappa solo se i dati sono validi
+          const markers = []; // Array per memorizzare i marcatori creati
+
+          locations.forEach((loc) => {
+            let x = Number(loc.x); // Converte in numero
+            let y = Number(loc.y); // Converte in numero
+
+            if (!isNaN(x) && !isNaN(y)) {
+              // Funzione per calcolare la dimensione dinamica in base allo zoom
+
+              // Crea il marcatore con la dimensione reattiva
+              const markerSize = getMarkerSize(); // Calcola la dimensione dinamica del marcatore
+
+              const marker = L.marker([imageHeight - y, x], {
+                icon: L.divIcon({
+                  className: "custom-marker",
+                  html: `<div style="background:${
+                    loc.color || "#000"
+                  }; width:${markerSize}px; height:${markerSize}px; border-radius:50%;"></div>`,
+                  iconSize: [markerSize, markerSize],
+                }),
+              })
+                .addTo(map)
+                .bindPopup(loc.title || "Senza titolo") // Popup con titolo di default
+                .on(
+                  "click",
+                  () => (window.location.href = `/quiz/${loc.quizid}`)
+                );
+
+              markers.push(marker); // Memorizza il marcatore per aggiornarlo successivamente
+            } else {
+              console.warn("Dati non validi per:", loc);
+            }
+          });
+
+          // Aggiungi il listener per aggiornare la dimensione dei marcatori quando lo zoom cambia
+          map.on("zoom", function () {
+            markers.forEach((marker) => {
+              const markerSize = getMarkerSize(); // Calcola la nuova dimensione
+              marker.setIcon(
+                L.divIcon({
+                  className: "custom-marker",
+                  html: `<div style="background:${marker.options.icon.options.html
+                    .match(
+                      /background:(#[0-9A-Fa-f]{6}|[A-Za-z]+|rgb\([0-9, ]+\));/
+                    )[0]
+                    .replace(
+                      "background:",
+                      ""
+                    )}; width:${markerSize}px; height:${markerSize}px; border-radius:50%;"></div>`,
+                  iconSize: [markerSize, markerSize],
+                })
+              );
+            });
+          });
+
+          // Crea e aggiunge la legenda
+          addLegend(locations);
+        } catch (error) {
+          console.error("Errore nel recupero dei dati:", error);
+        }
+      }
+
+      // Funzione per creare la legenda personalizzata
+      function addLegend(locations) {
+        var legend = L.control({ position: "bottomleft" });
+
+        legend.onAdd = function () {
+          var div = L.DomUtil.create("div", "legend");
+          div.innerHTML = "<h4>Legenda</h4>";
+
+          locations.forEach((loc) => {
+            div.innerHTML += `<div><span class="color-box" style="background:${loc.color};"></span>${loc.title}</div>`;
+          });
+
+          return div;
+        };
+
+        legend.addTo(map);
+      }
+
+      // Carica i dati quando la pagina è pronta
+      document.addEventListener("DOMContentLoaded", loadQuizData);
+    </script>
+  </body>
+</html>

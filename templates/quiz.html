@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0069d9" />
+    <title>Quiz</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="top-bar">
+      <div>
+        <button class="nav-button" onclick="window.location.href='/map'">
+          Mappa
+        </button>
+        <button class="nav-button" onclick="window.location.href='/scoreboard'">
+          Scoreboard
+        </button>
+      </div>
+      <p id="nav-userinfo">{{ user['score'] ~ ' punti' if user else '' }}</p>
+      <button class="nav-button" onclick="window.location.href='/'">
+        Home
+      </button>
+    </div>
+
+    <div class="quiz-container">
+      <h1 id="quiz-title">Caricamento...</h1>
+      <div id="quiz-options"></div>
+      <p id="quiz-message"></p>
+    </div>
+    <script>
+      const quizList = JSON.parse("{{ quizlist }}"); // Ottieni la lista dei quiz
+
+      let currentQuizIndex = 0; // Indice per tenere traccia del quiz corrente
+
+      async function fetchQuiz() {
+        if (currentQuizIndex >= quizList.length) {
+          // Se siamo alla fine della lista, torna alla mappa
+          window.location.href = "/map";
+          return;
+        }
+
+        try {
+          const quizId = quizList[currentQuizIndex]; // Ottieni l'ID del quiz corrente
+          const response = await fetch(`/api/quiz?id=${quizId}`);
+          const data = await response.json();
+          document.getElementById("quiz-title").innerText = data.title;
+
+          const optionsDiv = document.getElementById("quiz-options");
+          optionsDiv.innerHTML = ""; // Pulisce le opzioni precedenti
+
+          // Creazione dei bottoni per le risposte
+          Object.keys(data.options).forEach((key, index) => {
+            let optionText = data.options[key]; // Prendi il valore dell'opzione
+            let button = document.createElement("button");
+            button.innerText = optionText;
+            button.id = `option-${index + 1}`; // Imposta l'ID in base all'indice
+            button.classList.add("quiz-button");
+            button.onclick = () => sendAnswer(index + 1); // Usa l'indice come risposta
+            optionsDiv.appendChild(button);
+          });
+        } catch (error) {
+          document.getElementById("quiz-message").innerText =
+            "Errore nel caricamento del quiz.";
+        }
+      }
+
+      async function sendAnswer(optionId) {
+        try {
+          const quizId = quizList[currentQuizIndex]; // Usa l'ID del quiz corrente
+          const response = await fetch(
+            `/api/quiz-try?quizid=${quizId}&option=${optionId}`
+          );
+          const result = await response.json();
+
+          let message = document.getElementById("quiz-message");
+          let selectedButton = document.getElementById(`option-${optionId}`);
+          let correctButton = document.getElementById(
+            `option-${result.correct}`
+          );
+
+          if (result.status === "win") {
+            message.innerText = `Hai vinto! {{ settings['winPoints'] }} punti`;
+            selectedButton.classList.add("correct");
+            // Vai al prossimo quiz dopo un breve intervallo
+            setTimeout(() => {
+              currentQuizIndex++;
+              fetchQuiz();
+            }, 2000);
+          } else if (result.status === "lose") {
+            message.innerText =
+              "Risposta errata! {{ settings['losePoints'] }} punti, riprova.";
+            selectedButton.classList.add("incorrect");
+            setTimeout(
+              () => selectedButton.classList.remove("incorrect"),
+              1500
+            );
+          } else if (result.status === "error") {
+            message.innerText = "Hai già risposto correttamente!";
+
+            // Se la risposta scelta è diversa da quella corretta, colorala di rosso prima di mostrare quella giusta
+            if (optionId !== result.correct) {
+              selectedButton.classList.add("incorrect");
+              correctButton.classList.add("correct");
+              setTimeout(() => {
+                selectedButton.classList.remove("incorrect");
+                correctButton.classList.remove("correct");
+              }, 1500);
+            } else {
+              correctButton.classList.add("correct");
+              setTimeout(() => {
+                currentQuizIndex++;
+                fetchQuiz();
+              }, 2000);
+              setTimeout(() => correctButton.classList.remove("correct"), 1500);
+            }
+          }
+        } catch (error) {
+          document.getElementById("quiz-message").innerText =
+            "Errore nell'invio della risposta.";
+        }
+
+        // Aggiorna il punteggio dell'utente
+        userscore = await fetch("/api/scoreboard")
+          .then((res) => res.json())
+          .then(
+            (data) =>
+              data.find((u) => u.username === "{{ user['name'] }}")
+                ?.musegamepoint
+          );
+        document.getElementById(
+          "nav-userinfo"
+        ).innerText = `${userscore} punti`;
+      }
+
+      fetchQuiz();
+    </script>
+  </body>
+</html>
